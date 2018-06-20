@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/MercuryEngineering/CookieMonster"
 	"github.com/gosuri/uiprogress"
-	"github.com/tmthrgd/httputils"
 )
 
 const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
@@ -89,116 +87,10 @@ func main() {
 
 	u.Path = path.Join("/section", parts[2], "syllabus")
 
-	resp, err := httpGet(u.String(), cookies)
+	workList, err := parseSyllabus(u, cookies)
 	if err != nil {
 		logFatal("echo360: %v", err)
 	}
-
-	defer resp.Body.Close()
-
-	if !httputils.MIMETypeMatches(resp.Header.Get("Content-Type"), []string{"application/json"}) {
-		logFatal("echo360: unsupported mime type (possibly invalid credentials)")
-	}
-
-	var data struct {
-		Status  string
-		Message string
-		Data    []struct {
-			Type   string
-			Lesson struct {
-				Lesson struct {
-					DisplayName string
-				}
-				Video struct {
-					Media struct {
-						Name  string
-						Media struct {
-							Type    string
-							Current struct {
-								PrimaryFiles []struct {
-									S3URL string
-									Width int
-								}
-							}
-						}
-					}
-				}
-				Medias []struct {
-					DownloadURI    string
-					IsAvailable    bool
-					IsDownloadable bool
-				}
-			}
-		}
-	}
-
-	dec := json.NewDecoder(resp.Body)
-	if err := dec.Decode(&data); err != nil {
-		logFatal("echo360: %v", err)
-	}
-
-	if dec.More() {
-		logNotice("echo360: trailing JSON garbage")
-	}
-
-	if data.Status != "ok" {
-		logFatal("echo360: server returned JSON error %q: %q", data.Status, data.Message)
-	}
-
-	var workList []work
-
-outer:
-	for _, lesson := range data.Data {
-		if lesson.Type != "SyllabusLessonType" {
-			logInfo("echo360: unknown lesson type %q", lesson.Type)
-			continue
-		}
-
-		if media := lesson.Lesson.Video.Media; media.Media.Type == "VideoPresentation" {
-			var (
-				width int
-				s3URL string
-			)
-			for _, file := range media.Media.Current.PrimaryFiles {
-				if file.Width < width {
-					continue
-				}
-
-				width, s3URL = file.Width, file.S3URL
-			}
-
-			if s3URL != "" {
-				workList = append(workList, work{
-					media.Name,
-					s3URL,
-				})
-
-				continue outer
-			}
-		}
-
-		for _, media := range lesson.Lesson.Medias {
-			if !media.IsAvailable || !media.IsDownloadable {
-				continue
-			}
-
-			r, err := url.Parse(media.DownloadURI)
-			if err != nil {
-				logFatal("echo360: %v", err)
-			}
-
-			workList = append(workList, work{
-				lesson.Lesson.Lesson.DisplayName,
-				u.ResolveReference(r).String(),
-			})
-
-			continue outer
-		}
-
-		logInfo("echo360: could not find downloadable video for lesson %q", lesson.Lesson.Lesson.DisplayName)
-	}
-
-	logInfo("echo360: found %d videos for %d lessons", len(workList), len(data.Data))
 
 	uiprogress.Start()
 	defer uiprogress.Stop()
