@@ -138,11 +138,20 @@ func main() {
 func downloader(dir string, cookies []*http.Cookie, wg *sync.WaitGroup, workCh <-chan *work, stop <-chan struct{}) {
 	buf := make([]byte, 64<<10)
 
+loop:
 	for {
 		select {
 		case work, ok := <-workCh:
 			if !ok {
-				break
+				break loop
+			}
+
+			// stop always has priority, so check it again
+			// as select statements are randomly ordered.
+			select {
+			case <-stop:
+				break loop
+			default:
 			}
 
 			if err := work.download(buf, dir, cookies); err != nil {
@@ -151,7 +160,7 @@ func downloader(dir string, cookies []*http.Cookie, wg *sync.WaitGroup, workCh <
 
 			wg.Done()
 		case <-stop:
-			break
+			break loop
 		}
 	}
 }
