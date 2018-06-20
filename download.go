@@ -15,7 +15,7 @@ import (
 	"github.com/gosuri/uiprogress"
 )
 
-const barNameLength = 19
+const barNameLength = 15
 
 type work struct {
 	name string
