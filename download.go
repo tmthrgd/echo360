@@ -73,11 +73,11 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		bar  *uiprogress.Bar
 	)
 	if resp.ContentLength > 0 {
-		bar = uiprogress.AddBar(int(resp.ContentLength)).
+		bar = progress.AddBar(int(resp.ContentLength)).
 			AppendCompleted().AppendFunc(bytesComplete)
 		body = &progressReader{body, bar}
 	} else {
-		bar = uiprogress.AddBar(1).AppendCompleted()
+		bar = progress.AddBar(1).AppendCompleted()
 		defer bar.Set(1)
 	}
 

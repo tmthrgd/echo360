@@ -17,6 +17,11 @@ import (
 	"github.com/gosuri/uiprogress"
 )
 
+var (
+	progress        = uiprogress.New()
+	progressStarted bool
+)
+
 func init() {
 	flag.Usage = func() {
 		out := flag.CommandLine.Output()
@@ -91,8 +96,9 @@ func main() {
 		logFatal("echo360: failed to parse syllabus: %v", err)
 	}
 
-	uiprogress.Start()
-	defer uiprogress.Stop()
+	progressStarted = true
+	progress.Start()
+	defer progress.Stop()
 
 	var wg sync.WaitGroup
 	workCh := make(chan *work, len(workList))
