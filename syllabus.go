@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,8 +17,8 @@ func parseSyllabus(u *url.URL, cookies []*http.Cookie) ([]*work, error) {
 
 	defer resp.Body.Close()
 
-	if !httputils.MIMETypeMatches(resp.Header.Get("Content-Type"), []string{"application/json"}) {
-		return nil, errors.New("echo360: unsupported mime type (possibly invalid credentials)")
+	if ct := resp.Header.Get("Content-Type"); !httputils.MIMETypeMatches(ct, []string{"application/json"}) {
+		return nil, fmt.Errorf("echo360: unsupported media type %q (possibly invalid credentials)", ct)
 	}
 
 	var data jsonSchema
