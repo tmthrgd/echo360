@@ -29,6 +29,8 @@ func init() {
 		fmt.Fprintf(out, "%s [flags] <url> \n", os.Args[0])
 		flag.PrintDefaults()
 	}
+
+	progress.Width -= barNameLength
 }
 
 func main() {

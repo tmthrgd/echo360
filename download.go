@@ -13,7 +13,10 @@ import (
 
 	"github.com/c2h5oh/datasize"
 	"github.com/gosuri/uiprogress"
+	"github.com/gosuri/uiprogress/util/strutil"
 )
+
+const barNameLength = 19
 
 type work struct {
 	name string
@@ -80,6 +83,17 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		bar = progress.AddBar(1).AppendCompleted()
 		defer bar.Set(1)
 	}
+
+	var barName string
+	if len(w.name) < barNameLength {
+		barName = strutil.PadLeft(w.name, barNameLength, ' ')
+	} else {
+		barName = w.name[:barNameLength]
+	}
+
+	bar.PrependFunc(func(*uiprogress.Bar) string {
+		return barName
+	})
 
 	if _, err := io.CopyBuffer(f, body, buf); err != nil {
 		return err
