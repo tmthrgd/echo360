@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/gosuri/uiprogress"
@@ -31,7 +32,7 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 	}
 
 	name := w.name + ext
-	if _, err := os.Stat(path.Join(dir, name)); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
 		return nil
 	}
 
@@ -52,7 +53,7 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 			name = filename
 		}
 
-		if _, err := os.Stat(path.Join(dir, name)); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
 			return nil
 		}
 	}
@@ -88,7 +89,7 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		return err
 	}
 
-	return os.Rename(f.Name(), path.Join(dir, name))
+	return os.Rename(f.Name(), filepath.Join(dir, name))
 }
 
 func bytesComplete(b *uiprogress.Bar) string {
