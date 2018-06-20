@@ -12,7 +12,7 @@ import (
 var (
 	fatalColor  = color.New(color.FgRed, color.Bold)
 	errorColor  = color.New(color.FgRed)
-	noticeColor = color.New(color.FgBlue)
+	noticeColor = color.New(color.FgBlue, color.Bold)
 	infoColor   = color.New(color.FgYellow)
 )
 
