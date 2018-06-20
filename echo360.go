@@ -46,13 +46,13 @@ func main() {
 	if !hasOut {
 		var err error
 		if *dir, err = os.Getwd(); err != nil {
-			logFatal("echo360: %v", err)
+			logFatal("echo360: failed to get working directory: %v", err)
 		}
 	}
 
 	u, err := url.Parse(flag.Arg(0))
 	if err != nil {
-		logFatal("echo360: %v", err)
+		logFatal("echo360: failed to parse url: %v", err)
 	}
 
 	switch u.Scheme {
@@ -82,14 +82,14 @@ func main() {
 
 	cookies, err := cookiemonster.ParseFile(*cookiesPath)
 	if err != nil {
-		logFatal("echo360: %v", err)
+		logFatal("echo360: failed to parse cookies file: %v", err)
 	}
 
 	u.Path = path.Join("/section", parts[2], "syllabus")
 
 	workList, err := parseSyllabus(u, cookies)
 	if err != nil {
-		logFatal("echo360: %v", err)
+		logFatal("echo360: failed to parse syllabus: %v", err)
 	}
 
 	uiprogress.Start()
