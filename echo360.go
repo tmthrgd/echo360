@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,7 +14,6 @@ import (
 	"sync"
 
 	"github.com/MercuryEngineering/CookieMonster"
-	"github.com/c2h5oh/datasize"
 	"github.com/gosuri/uiprogress"
 	"github.com/tmthrgd/httputils"
 )
@@ -242,122 +238,23 @@ outer:
 	}
 }
 
-type work struct {
-	name string
-	url  string
-}
-
 func downloader(dir string, cookies []*http.Cookie, wg *sync.WaitGroup, workCh <-chan *work, stop <-chan struct{}) {
 	buf := make([]byte, 64<<10)
 
 	for {
-		var work *work
 		select {
-		case <-stop:
-			return
-		case work = <-workCh:
-		}
-
-		// BUG(tmthrgd): investigate why a panic may occur on first line of download
-		if work == nil {
-			var stopped bool
-			select {
-			case <-stop:
-				stopped = true
-			default:
+		case work, ok := <-workCh:
+			if !ok {
+				break
 			}
 
-			logFatal("work is <nil> with stoped = %v", stopped)
-		}
+			if err := work.download(buf, dir, cookies); err != nil {
+				logError("echo360: failed to download %q: %v", work.name, err)
+			}
 
-		if err := download(buf, dir, cookies, work); err != nil {
-			logError("echo360: failed to download %q: %v", work.name, err)
-		}
-
-		wg.Done()
-	}
-}
-
-func download(buf []byte, dir string, cookies []*http.Cookie, work *work) error {
-	u, err := url.Parse(work.url)
-
-	var ext string
-	if err == nil {
-		ext = path.Ext(u.Path)
-	}
-	if ext == "" {
-		ext = ".mp4"
-	}
-
-	name := work.name + ext
-	if _, err := os.Stat(path.Join(dir, name)); err == nil {
-		return nil
-	}
-
-	resp, err := httpGet(work.url, cookies)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	// video/mp4
-
-	if cd := resp.Header.Get("Content-Disposition"); cd != "" {
-		_, params, err := mime.ParseMediaType(cd)
-		if err != nil {
-			return err
-		}
-
-		if filename, ok := params["filename"]; ok {
-			name = filename
+			wg.Done()
+		case <-stop:
+			break
 		}
 	}
-
-	if _, err := os.Stat(path.Join(dir, name)); err == nil {
-		return nil
-	}
-
-	f, err := ioutil.TempFile(dir, ".echo360-")
-	if err != nil {
-		return err
-	}
-
-	defer os.Remove(f.Name())
-	defer f.Close()
-
-	var (
-		body io.Reader = resp.Body
-		bar  *uiprogress.Bar
-	)
-	if resp.ContentLength > 0 {
-		bar = uiprogress.AddBar(int(resp.ContentLength)).AppendCompleted().AppendFunc(bytesComplete)
-		body = &progressReader{body, bar}
-	} else {
-		bar = uiprogress.AddBar(1).AppendCompleted()
-		defer bar.Set(1)
-	}
-
-	if _, err := io.CopyBuffer(f, body, buf); err != nil {
-		return err
-	}
-
-	return os.Rename(f.Name(), path.Join(dir, name))
-}
-
-func bytesComplete(b *uiprogress.Bar) string {
-	cur := datasize.ByteSize(b.Current())
-	tot := datasize.ByteSize(b.Total)
-	return fmt.Sprintf("%s of %s", cur.HR(), tot.HR())
-}
-
-type progressReader struct {
-	r   io.Reader
-	bar *uiprogress.Bar
-}
-
-func (pr *progressReader) Read(p []byte) (n int, err error) {
-	n, err = pr.r.Read(p)
-	pr.bar.Set(pr.bar.Current() + n)
-	return
 }
