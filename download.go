@@ -13,7 +13,6 @@ import (
 
 	"github.com/c2h5oh/datasize"
 	"github.com/gosuri/uiprogress"
-	"github.com/gosuri/uiprogress/util/strutil"
 )
 
 const barNameLength = 19
@@ -84,7 +83,7 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		defer bar.Set(1)
 	}
 
-	barName := strutil.Resize(w.name, barNameLength)
+	barName := strutilResize(w.name, barNameLength)
 	bar.PrependFunc(func(*uiprogress.Bar) string {
 		return barName
 	})
