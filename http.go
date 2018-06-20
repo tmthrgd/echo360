@@ -25,8 +25,6 @@ func httpGet(url string, cookies []*http.Cookie) (*http.Response, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		logNotice("%v : %#v", url, resp)
-
 		resp.Body.Close()
 		return nil, fmt.Errorf("echo360: server returned HTTP %d error: %q", resp.StatusCode, resp.Status)
 	}
