@@ -10,7 +10,7 @@ import (
 	"github.com/tmthrgd/httputils"
 )
 
-func parseSyllabus(u *url.URL, cookies []*http.Cookie) ([]work, error) {
+func parseSyllabus(u *url.URL, cookies []*http.Cookie) ([]*work, error) {
 	resp, err := httpGet(u.String(), cookies)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func parseSyllabus(u *url.URL, cookies []*http.Cookie) ([]work, error) {
 		return nil, fmt.Errorf("echo360: server returned JSON error %q: %q", data.Status, data.Message)
 	}
 
-	workList := make([]work, 0, len(data.Data))
+	workList := make([]*work, 0, len(data.Data))
 
 outer:
 	for _, lesson := range data.Data {
@@ -60,7 +60,7 @@ outer:
 			}
 
 			if s3URL != "" {
-				workList = append(workList, work{
+				workList = append(workList, &work{
 					media.Name,
 					s3URL,
 				})
@@ -79,7 +79,7 @@ outer:
 				return nil, err
 			}
 
-			workList = append(workList, work{
+			workList = append(workList, &work{
 				lesson.Lesson.Lesson.DisplayName,
 				u.ResolveReference(r).String(),
 			})

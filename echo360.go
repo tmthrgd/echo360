@@ -106,9 +106,9 @@ func main() {
 	workCh := make(chan *work, len(workList))
 	defer close(workCh)
 
-	for i := range workList {
+	for _, work := range workList {
 		wg.Add(1)
-		workCh <- &workList[i]
+		workCh <- work
 	}
 
 	stop := make(chan struct{})
