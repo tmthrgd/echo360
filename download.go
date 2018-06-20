@@ -62,8 +62,10 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		return err
 	}
 
+	closer := ioOnceCloser(f)
+
 	defer os.Remove(f.Name())
-	defer f.Close()
+	defer closer.Close()
 
 	var (
 		body io.Reader = resp.Body
@@ -79,6 +81,10 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 	}
 
 	if _, err := io.CopyBuffer(f, body, buf); err != nil {
+		return err
+	}
+
+	if err := closer.Close(); err != nil {
 		return err
 	}
 
