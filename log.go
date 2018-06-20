@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -71,6 +72,9 @@ func logDo(fn func()) {
 			// and after we hold the progress lock.
 			return out.Write(p)
 		}
+
+		// Clear the current line with an ANSI escape sequence.
+		io.WriteString(os.Stderr, "\x1b[2K\r")
 
 		fn()
 		return len(p), nil
