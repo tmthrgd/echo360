@@ -84,13 +84,7 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		defer bar.Set(1)
 	}
 
-	var barName string
-	if len(w.name) < barNameLength {
-		barName = strutil.PadLeft(w.name, barNameLength, ' ')
-	} else {
-		barName = w.name[:barNameLength]
-	}
-
+	barName := strutil.Resize(w.name, barNameLength)
 	bar.PrependFunc(func(*uiprogress.Bar) string {
 		return barName
 	})
