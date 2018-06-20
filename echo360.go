@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -19,7 +20,7 @@ import (
 func init() {
 	flag.Usage = func() {
 		out := flag.CommandLine.Output()
-		fmt.Fprintf(out, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(out, "Usage of %s:\n", filepath.Base(os.Args[0]))
 		fmt.Fprintf(out, "%s [flags] <url> \n", os.Args[0])
 		flag.PrintDefaults()
 	}
