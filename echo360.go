@@ -129,6 +129,8 @@ func main() {
 	case <-sig:
 		signal.Stop(sig)
 
+		logNotice("echo360: ^C received, finishing ongoing downloads; ^C again to terminate")
+
 		close(stop)
 		wg.Add(-len(workCh))
 		<-done
