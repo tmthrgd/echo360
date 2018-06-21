@@ -82,6 +82,8 @@ func main() {
 		logFatal("echo360: unsupported path %q", u.Path)
 	}
 
+	u.Path = path.Join("/section", parts[2], "syllabus")
+
 	if *cookiesPath == "" {
 		logFatal("echo360: -cookies flag cannot be empty")
 	}
@@ -90,8 +92,6 @@ func main() {
 	if err != nil {
 		logFatal("echo360: failed to parse cookies file: %v", err)
 	}
-
-	u.Path = path.Join("/section", parts[2], "syllabus")
 
 	workList, err := parseSyllabus(u, cookies)
 	if err != nil {
