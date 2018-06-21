@@ -102,14 +102,15 @@ func main() {
 	progress.Start()
 	defer progress.Stop()
 
-	var wg sync.WaitGroup
 	workCh := make(chan *work, len(workList))
-	defer close(workCh)
-
 	for _, work := range workList {
-		wg.Add(1)
 		workCh <- work
 	}
+
+	close(workCh)
+
+	var wg sync.WaitGroup
+	wg.Add(len(workList))
 
 	stop := make(chan struct{})
 
@@ -134,7 +135,11 @@ func main() {
 		logNotice("echo360: ^C received, finishing ongoing downloads; ^C again to terminate")
 
 		close(stop)
-		wg.Add(-len(workCh))
+
+		for range workCh {
+			wg.Done()
+		}
+
 		<-done
 	}
 }
@@ -154,6 +159,7 @@ loop:
 			// as select statements are randomly ordered.
 			select {
 			case <-stop:
+				wg.Done()
 				break loop
 			default:
 			}
