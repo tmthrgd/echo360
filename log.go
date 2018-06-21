@@ -52,13 +52,13 @@ func logFatal(format string, args ...interface{}) {
 var logMu sync.Mutex
 
 func logDo(fn func()) {
+	logMu.Lock()
+	defer logMu.Unlock()
+
 	if !progressStarted {
 		fn()
 		return
 	}
-
-	logMu.Lock()
-	defer logMu.Unlock()
 
 	out := progress.Out
 	defer progress.SetOut(out)
