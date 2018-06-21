@@ -98,9 +98,11 @@ func main() {
 		logFatal("echo360: failed to parse syllabus: %v", err)
 	}
 
+	logMu.Lock()
 	progressStarted = true
 	progress.Start()
 	defer progress.Stop()
+	logMu.Unlock()
 
 	workCh := make(chan *work, len(workList))
 	for _, work := range workList {
