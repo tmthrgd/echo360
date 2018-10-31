@@ -34,7 +34,8 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 	}
 
 	name := w.name + ext
-	if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+	dest := filepath.Join(dir, name)
+	if _, err := os.Stat(dest); err == nil {
 		return nil
 	}
 
@@ -53,9 +54,10 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 
 		if filename, ok := params["filename"]; ok {
 			name = filename
+			dest = filepath.Join(dir, name)
 		}
 
-		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+		if _, err := os.Stat(dest); err == nil {
 			return nil
 		}
 	}
@@ -96,7 +98,11 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		return err
 	}
 
-	return os.Rename(f.Name(), filepath.Join(dir, name))
+	if err := os.Link(f.Name(), dest); err != nil {
+		return err
+	}
+
+	return os.Remove(f.Name())
 }
 
 func bytesComplete(b *uiprogress.Bar) string {
