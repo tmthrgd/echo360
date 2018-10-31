@@ -60,7 +60,7 @@ outer:
 
 			if s3URL != "" {
 				workList = append(workList, &work{
-					media.Name,
+					adHocRename(&lesson, media.Name),
 					s3URL,
 				})
 
@@ -79,7 +79,7 @@ outer:
 			}
 
 			workList = append(workList, &work{
-				lesson.Lesson.Lesson.DisplayName,
+				adHocRename(&lesson, lesson.Lesson.Lesson.DisplayName),
 				u.ResolveReference(r).String(),
 			})
 
@@ -93,34 +93,50 @@ outer:
 	return workList, nil
 }
 
+func adHocRename(lesson *jsonLessonSchema, name string) string {
+	if lesson.Lesson.Lesson.Name == "Ad Hoc Capture" {
+		name = fmt.Sprintf("%s (%s)", name, lesson.Lesson.Lesson.Timing.Start)
+
+		logInfo("echo360: found likely conflicting lesson %q, saving as %q", lesson.Lesson.Lesson.DisplayName, name)
+	}
+
+	return name
+}
+
 type jsonSchema struct {
 	Status  string
 	Message string
-	Data    []struct {
-		Type   string
+	Data    []jsonLessonSchema
+}
+
+type jsonLessonSchema struct {
+	Type   string
+	Lesson struct {
 		Lesson struct {
-			Lesson struct {
-				DisplayName string
+			Name   string
+			Timing struct {
+				Start string
 			}
-			Video struct {
+			DisplayName string
+		}
+		Video struct {
+			Media struct {
+				Name  string
 				Media struct {
-					Name  string
-					Media struct {
-						Type    string
-						Current struct {
-							PrimaryFiles []struct {
-								S3URL string
-								Width int
-							}
+					Type    string
+					Current struct {
+						PrimaryFiles []struct {
+							S3URL string
+							Width int
 						}
 					}
 				}
 			}
-			Medias []struct {
-				DownloadURI    string
-				IsAvailable    bool
-				IsDownloadable bool
-			}
+		}
+		Medias []struct {
+			DownloadURI    string
+			IsAvailable    bool
+			IsDownloadable bool
 		}
 	}
 }
