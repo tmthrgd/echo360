@@ -94,6 +94,10 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		return err
 	}
 
+	if err := f.Sync(); err != nil {
+		return err
+	}
+
 	if err := closer.Close(); err != nil {
 		return err
 	}
