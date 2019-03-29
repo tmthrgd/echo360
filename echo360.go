@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"os/signal"
@@ -13,11 +12,8 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
-	cookiemonster "github.com/MercuryEngineering/CookieMonster"
 	"github.com/gosuri/uiprogress"
-	"golang.org/x/net/publicsuffix"
 )
 
 var (
@@ -91,29 +87,9 @@ func main() {
 		logFatal("echo360: -cookies flag cannot be empty")
 	}
 
-	cookies, err := cookiemonster.ParseFile(*cookiesPath)
+	client, err := httpClient(u, *cookiesPath)
 	if err != nil {
-		logFatal("echo360: failed to parse cookies file: %v", err)
-	}
-
-	unixZero := time.Unix(0, 0)
-	for _, cookie := range cookies {
-		// cookiejar uses IsZero to determine whether a cookie has
-		// expired which doesn't accept unixZero  which cookiejar uses
-		// for "forever" cookies. We have to replace those values with
-		// the actual zero value of time.Time to satisfy cookiejar.
-		if cookie.Expires.Equal(unixZero) {
-			cookie.Expires = time.Time{}
-		}
-	}
-
-	jar, _ := cookiejar.New(&cookiejar.Options{
-		PublicSuffixList: publicsuffix.List,
-	})
-	jar.SetCookies(u, cookies)
-
-	client := &http.Client{
-		Jar: jar,
+		logFatal("echo360: failed to create http client: %v", err)
 	}
 
 	workList, err := parseSyllabus(u, client)
