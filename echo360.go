@@ -98,6 +98,10 @@ func main() {
 		logFatal("echo360: failed to parse syllabus: %v", err)
 	}
 
+	if err := os.MkdirAll(*dir, 0755); err != nil {
+		logFatal("echo360: failed to create directory: %v", err)
+	}
+
 	logMu.Lock()
 	progressStarted = true
 	progress.Start()
