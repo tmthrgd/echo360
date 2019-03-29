@@ -22,7 +22,7 @@ type work struct {
 	url  string
 }
 
-func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
+func (w *work) download(buf []byte, dir string, client *http.Client) error {
 	u, err := url.Parse(w.url)
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func (w *work) download(buf []byte, dir string, cookies []*http.Cookie) error {
 		return nil
 	}
 
-	resp, err := httpGet(w.url, cookies)
+	resp, err := httpGet(w.url, client)
 	if err != nil {
 		return err
 	}

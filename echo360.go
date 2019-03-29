@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"os/signal"
@@ -12,9 +13,11 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/MercuryEngineering/CookieMonster"
+	cookiemonster "github.com/MercuryEngineering/CookieMonster"
 	"github.com/gosuri/uiprogress"
+	"golang.org/x/net/publicsuffix"
 )
 
 var (
@@ -93,7 +96,27 @@ func main() {
 		logFatal("echo360: failed to parse cookies file: %v", err)
 	}
 
-	workList, err := parseSyllabus(u, cookies)
+	unixZero := time.Unix(0, 0)
+	for _, cookie := range cookies {
+		// cookiejar uses IsZero to determine whether a cookie has
+		// expired which doesn't accept unixZero  which cookiejar uses
+		// for "forever" cookies. We have to replace those values with
+		// the actual zero value of time.Time to satisfy cookiejar.
+		if cookie.Expires.Equal(unixZero) {
+			cookie.Expires = time.Time{}
+		}
+	}
+
+	jar, _ := cookiejar.New(&cookiejar.Options{
+		PublicSuffixList: publicsuffix.List,
+	})
+	jar.SetCookies(u, cookies)
+
+	client := &http.Client{
+		Jar: jar,
+	}
+
+	workList, err := parseSyllabus(u, client)
 	if err != nil {
 		logFatal("echo360: failed to parse syllabus: %v", err)
 	}
@@ -121,7 +144,7 @@ func main() {
 	stop := make(chan struct{})
 
 	for i := 0; i < *threads && i < len(workList); i++ {
-		go downloader(*dir, cookies, &wg, workCh, stop)
+		go downloader(*dir, client, &wg, workCh, stop)
 	}
 
 	done := make(chan struct{})
@@ -150,7 +173,7 @@ func main() {
 	}
 }
 
-func downloader(dir string, cookies []*http.Cookie, wg *sync.WaitGroup, workCh <-chan *work, stop <-chan struct{}) {
+func downloader(dir string, client *http.Client, wg *sync.WaitGroup, workCh <-chan *work, stop <-chan struct{}) {
 	buf := make([]byte, 64<<10)
 
 loop:
@@ -170,7 +193,7 @@ loop:
 			default:
 			}
 
-			if err := work.download(buf, dir, cookies); err != nil {
+			if err := work.download(buf, dir, client); err != nil {
 				logError("echo360: failed to download %q: %v", work.name, err)
 			}
 

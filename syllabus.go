@@ -9,8 +9,8 @@ import (
 	"github.com/tmthrgd/httputils"
 )
 
-func parseSyllabus(u *url.URL, cookies []*http.Cookie) ([]*work, error) {
-	resp, err := httpGet(u.String(), cookies)
+func parseSyllabus(u *url.URL, client *http.Client) ([]*work, error) {
+	resp, err := httpGet(u.String(), client)
 	if err != nil {
 		return nil, err
 	}
