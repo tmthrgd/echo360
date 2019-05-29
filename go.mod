@@ -1,4 +1,4 @@
-module tmthrgd.dev/go/echo360
+module go.tmthrgd.dev/echo360
 
 go 1.12
 
